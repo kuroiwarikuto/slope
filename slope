@@ -2,6 +2,7 @@
 # SPDX-FileCopyrightText: 2026 Rikuto Kuroiwa
 # SPDX-License-Identifier: BSD-3-Clause
 
+import argparse
 import sys
 
 
@@ -12,10 +13,43 @@ def tonum(s):
         return float(s)
 
 
-prev = None
-for line in sys.stdin:
-    line = line.strip()
-    val = tonum(line)
-    if prev is not None:
-        print(val - prev)
-    prev = val
+def main():
+    parser = argparse.ArgumentParser(
+        description='Calculate the rate of change (slope) of numbers from stdin.'
+    )
+    parser.add_argument(
+        '-d', '--delta', type=float, default=None,
+        help='interval between data points (must be positive, default: 1)'
+    )
+    args = parser.parse_args()
+
+    if args.delta is not None and not (args.delta > 0):
+        sys.stderr.write('Error: delta must be a positive number.\n')
+        sys.exit(1)
+
+    prev = None
+    count = 0
+    for line in sys.stdin:
+        text = line.strip()
+        try:
+            val = tonum(text)
+        except ValueError:
+            sys.stderr.write(f'Error: invalid number: {text}\n')
+            sys.exit(1)
+
+        if prev is not None:
+            diff = val - prev
+            if args.delta is None:
+                print(diff)
+            else:
+                print(diff / args.delta)
+        prev = val
+        count += 1
+
+    if count < 2:
+        sys.stderr.write('Error: at least two numbers are required.\n')
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
